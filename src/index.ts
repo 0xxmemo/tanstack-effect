@@ -17,7 +17,9 @@ export function getTanstackEffectClient<
 >(
   api: HttpApi.HttpApi<Id, Groups, ApiError, ApiR>,
   baseUrl?: string
-): new (_: never) => { client: HttpApiClient.Client<Groups, ApiError, never> }
+): new (...args: never[]) => {
+  client: HttpApiClient.Client<Groups, ApiError, never>
+}
 
 export function getTanstackEffectClient<
   Id extends string,

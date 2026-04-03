@@ -1,6 +1,10 @@
 'use client'
 
-import type { UseQueryOptions } from '@tanstack/react-query'
+import type {
+  DefinedUseQueryResult,
+  UndefinedInitialDataOptions,
+  UseQueryResult,
+} from '@tanstack/react-query'
 import { useQuery } from '@tanstack/react-query'
 
 import { EffectHttpError } from '../error'
@@ -30,19 +34,18 @@ export function useEffectQuery<
   params: GetRequestParams<X, Y>,
   options: ApiCallOptions &
     Omit<
-      UseQueryOptions<GetCleanSuccessType<X, Y>, EffectHttpError>,
+      UndefinedInitialDataOptions<
+        GetCleanSuccessType<X, Y>,
+        EffectHttpError,
+        GetCleanSuccessType<X, Y>,
+        readonly unknown[]
+      >,
       'queryKey' | 'queryFn'
     > & {
       initialData: GetCleanSuccessType<X, Y> | (() => GetCleanSuccessType<X, Y>)
     }
-): Omit<
-  ReturnType<typeof useQuery<GetCleanSuccessType<X, Y>, EffectHttpError>>,
-  'data'
-> & {
-  data: GetCleanSuccessType<X, Y>
-}
+): DefinedUseQueryResult<GetCleanSuccessType<X, Y>, EffectHttpError>
 
-// Overload 2: When initialData is not provided, data is nullable
 export function useEffectQuery<
   X extends keyof TTanstackEffectClient,
   Y extends keyof TTanstackEffectClient[X],
@@ -52,10 +55,18 @@ export function useEffectQuery<
   params: GetRequestParams<X, Y>,
   options?: ApiCallOptions &
     Omit<
-      UseQueryOptions<GetCleanSuccessType<X, Y>, EffectHttpError>,
+      UndefinedInitialDataOptions<
+        GetCleanSuccessType<X, Y>,
+        EffectHttpError,
+        GetCleanSuccessType<X, Y>,
+        readonly unknown[]
+      >,
       'queryKey' | 'queryFn'
     >
-): ReturnType<typeof useQuery<GetCleanSuccessType<X, Y>, EffectHttpError>>
+): UseQueryResult<
+  GetCleanSuccessType<X, Y> extends never ? {} : GetCleanSuccessType<X, Y>,
+  EffectHttpError
+>
 
 // Implementation
 export function useEffectQuery<
@@ -67,7 +78,12 @@ export function useEffectQuery<
   params: GetRequestParams<X, Y>,
   options?: ApiCallOptions &
     Omit<
-      UseQueryOptions<GetCleanSuccessType<X, Y>, EffectHttpError>,
+      UndefinedInitialDataOptions<
+        GetCleanSuccessType<X, Y>,
+        EffectHttpError,
+        GetCleanSuccessType<X, Y>,
+        readonly unknown[]
+      >,
       'queryKey' | 'queryFn'
     >
 ) {
@@ -77,10 +93,12 @@ export function useEffectQuery<
     ...useQueryParams
   } = options || {}
 
-  return useQuery({
+  const query = useQuery<GetCleanSuccessType<X, Y>, EffectHttpError>({
     queryKey: [section, method, params, includeCredentials, noCache],
     queryFn: () =>
       apiEffectRunner(section, method, params, includeCredentials, noCache),
     ...useQueryParams,
   })
+
+  return query as UseQueryResult<GetCleanSuccessType<X, Y>, EffectHttpError>
 }

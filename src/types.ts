@@ -1,5 +1,6 @@
 import type { HttpClientResponse } from '@effect/platform'
 import { Effect, Layer } from 'effect'
+import type { Simplify } from 'effect/Types'
 
 /**
  * @description Base interface to be augmented by consumers with their API client shape.
@@ -26,8 +27,8 @@ export type TTanstackEffectServiceTag = Effect.Effect<
 export type GetRequestParams<
   X extends keyof TTanstackEffectClient,
   Y extends keyof TTanstackEffectClient[X],
-> = TTanstackEffectClient[X][Y] extends (...args: any[]) => any
-  ? Parameters<TTanstackEffectClient[X][Y]>[0]
+> = TTanstackEffectClient[X][Y] extends (params: infer TParams) => any
+  ? TParams
   : never
 
 /**
@@ -39,8 +40,8 @@ export type GetRequestParams<
 export type GetReturnType<
   X extends keyof TTanstackEffectClient,
   Y extends keyof TTanstackEffectClient[X],
-> = TTanstackEffectClient[X][Y] extends (...args: any[]) => any
-  ? ReturnType<TTanstackEffectClient[X][Y]>
+> = TTanstackEffectClient[X][Y] extends (...args: any[]) => infer TReturn
+  ? TReturn
   : never
 
 /**
@@ -48,10 +49,12 @@ export type GetReturnType<
  * @param T - The type to exclude the HttpResponse tuple from
  * @returns The type without the HttpResponse tuple
  */
-export type ExcludeHttpResponseTuple<T> = Exclude<
-  T,
-  readonly [any, HttpClientResponse.HttpClientResponse]
->
+export type ExcludeHttpResponseTuple<T> = T extends readonly [
+  infer TSuccess,
+  HttpClientResponse.HttpClientResponse,
+]
+  ? TSuccess
+  : T
 
 /**
  * @description Get the clean success type
@@ -59,12 +62,23 @@ export type ExcludeHttpResponseTuple<T> = Exclude<
  * @param Y - The key of the Tanstack Effect client[X]
  * @returns The clean success type
  */
+export type ExtractEffectSuccess<T> =
+  T extends Effect.Effect<infer TSuccess, any, any> ? TSuccess : never
+
 export type GetCleanSuccessType<
   X extends keyof TTanstackEffectClient,
   Y extends keyof TTanstackEffectClient[X],
-> = ExcludeHttpResponseTuple<
-  GetReturnType<X, Y> extends Effect.Effect<infer A, any, any> ? A : never
->
+> =
+  GetReturnType<X, Y> extends Effect.Effect<infer TSuccess, any, any>
+    ? Simplify<TSuccess> extends infer TResolvedSuccess
+      ? TResolvedSuccess extends readonly [
+          any,
+          HttpClientResponse.HttpClientResponse,
+        ]
+        ? TResolvedSuccess[0]
+        : TResolvedSuccess
+      : never
+    : never
 
 /**
  * @description Get the promise success type

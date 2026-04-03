@@ -21,7 +21,6 @@
     "checkJs": false,
 
     // Interop constraints
-    "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
@@ -31,6 +30,7 @@
     "module": "ESNext",
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["bun"],
 
     // Skip type checking for node modules
     "skipLibCheck": true,
